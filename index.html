@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jogo da Velha</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: #ff4e91;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 10px;
+    }
+    .cell {
+      background: #222;
+      border-radius: 10px;
+      font-size: 64px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+    }
+    .cell:hover {
+      background-color: #ff236f;
+    }
+    #message {
+      margin-top: 30px;
+      font-size: 20px;
+      text-align: center;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #linkBtn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #ff4e91;
+      border: none;
+      border-radius: 12px;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    #linkBtn:hover {
+      background-color: #ff236f;
+    }
+    #resetBtn {
+      margin-top: 20px;
+      padding: 8px 18px;
+      background: #444;
+      border: none;
+      border-radius: 10px;
+      color: #eee;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #resetBtn:hover {
+      background-color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Jogo da Velha</h1>
+  <div id="board">
+    <div class="cell" data-index="0"></div>
+    <div class="cell" data-index="1"></div>
+    <div class="cell" data-index="2"></div>
+    <div class="cell" data-index="3"></div>
+    <div class="cell" data-index="4"></div>
+    <div class="cell" data-index="5"></div>
+    <div class="cell" data-index="6"></div>
+    <div class="cell" data-index="7"></div>
+    <div class="cell" data-index="8"></div>
+  </div>
+
+  <div id="message">
+    <div id="msgText"></div>
+    <a id="linkBtn" href="https://8meses.vercel.app/" target="_blank" style="display:none;">Ver presente 💖</a>
+    <button id="resetBtn">Jogar de novo</button>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const cells = document.querySelectorAll('.cell');
+    const message = document.getElementById('message');
+    const msgText = document.getElementById('msgText');
+    const linkBtn = document.getElementById('linkBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let boardState = Array(9).fill(null); // null, 'X', 'O'
+    let playerTurn = true; // true = player (X), false = bot (O)
+    let gameOver = false;
+
+    function checkWin(player) {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8], // linhas
+        [0,3,6],[1,4,7],[2,5,8], // colunas
+        [0,4,8],[2,4,6]          // diagonais
+      ];
+      return wins.some(line => line.every(i => boardState[i] === player));
+    }
+
+    function checkDraw() {
+      return boardState.every(cell => cell !== null);
+    }
+
+    function botPlay() {
+      if (gameOver) return;
+
+      // Jogada aleatória em espaço vazio
+      let emptyIndices = boardState
+        .map((v,i) => v === null ? i : null)
+        .filter(i => i !== null);
+
+      if (emptyIndices.length === 0) return;
+
+      const move = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      boardState[move] = 'O';
+      cells[move].innerText = 'O';
+      cells[move].style.color = '#90caf9'; // azulzinho
+
+      if (checkWin('O')) {
+        endGame('Você perdeu, mas não desista! 💔');
+        return;
+      }
+
+      if (checkDraw()) {
+        endGame('Empatamos! Quer tentar de novo? 🤝');
+        return;
+      }
+
+      playerTurn = true;
+    }
+
+    function endGame(text) {
+      gameOver = true;
+      message.style.display = 'flex';
+      msgText.innerText = text;
+
+      // Se jogador ganhou, mostrar link especial
+      if (text === 'Você ganhou! 🎉❤️') {
+        linkBtn.style.display = 'inline-block';
+      } else {
+        linkBtn.style.display = 'none';
+      }
+    }
+
+    function resetGame() {
+      boardState.fill(null);
+      cells.forEach(cell => {
+        cell.innerText = '';
+        cell.style.color = '#fff';
+      });
+      playerTurn = true;
+      gameOver = false;
+      message.style.display = 'none';
+      linkBtn.style.display = 'none';
+    }
+
+    cells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        if (gameOver || !playerTurn) return;
+
+        const index = parseInt(cell.getAttribute('data-index'));
+        if (boardState[index] !== null) return;
+
+        boardState[index] = 'X';
+        cell.innerText = 'X';
+        cell.style.color = '#ff4e91'; // rosa
+
+        if (checkWin('X')) {
+          endGame('Você ganhou! 🎉❤️');
+          return;
+        }
+
+        if (checkDraw()) {
+          endGame('Empatamos! Quer tentar de novo? 🤝');
+          return;
+        }
+
+        playerTurn = false;
+        setTimeout(botPlay, 500);
+      });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetGame();
+    });
+
+    // inicia jogo zerado
+    resetGame();
+
+  </script>
+</body>
+</html>
